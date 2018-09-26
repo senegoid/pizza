@@ -6,7 +6,8 @@ module.exports = (sequelize, DataTypes) => {
     minutos: DataTypes.INTEGER
   }, {})
   Extra.associate = function (models) {
-    // associations can be defined here    
+    // Extra.hasMany(models.Pizza, { foreignKey: 'extra_id' })
+    Extra.belongsToMany(models.Pizza, {through: 'PizzaExtras'})
   }
   return Extra
 }

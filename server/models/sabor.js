@@ -6,7 +6,7 @@ module.exports = (sequelize, DataTypes) => {
     minutos: DataTypes.INTEGER
   }, {})
   Sabor.associate = function (models) {
-    // associations can be defined here
+    Sabor.hasMany(models.Pizza, { foreignKey: 'saborId' })
   }
   return Sabor
 }
