@@ -52,7 +52,17 @@
                     "allowNull": false,
                     "seqType": "Sequelize.DATE"
                 },
-                "sabor_id": {
+                "tamanhoId": {
+                    "allowNull": true,
+                    "references": {
+                        "model": "Tamanhos",
+                        "key": "id"
+                    },
+                    "onDelete": "SET NULL",
+                    "onUpdate": "CASCADE",
+                    "seqType": "Sequelize.INTEGER"
+                },
+                "saborId": {
                     "allowNull": true,
                     "references": {
                         "model": "Sabors",
@@ -90,6 +100,16 @@
                 "updatedAt": {
                     "allowNull": false,
                     "seqType": "Sequelize.DATE"
+                },
+                "saborId": {
+                    "allowNull": true,
+                    "references": {
+                        "model": "Pizzas",
+                        "key": "id"
+                    },
+                    "onDelete": "SET NULL",
+                    "onUpdate": "CASCADE",
+                    "seqType": "Sequelize.INTEGER"
                 }
             },
             "indexes": []
@@ -119,16 +139,6 @@
                 "updatedAt": {
                     "allowNull": false,
                     "seqType": "Sequelize.DATE"
-                },
-                "tamanho_id": {
-                    "allowNull": true,
-                    "references": {
-                        "model": "Pizzas",
-                        "key": "id"
-                    },
-                    "onDelete": "SET NULL",
-                    "onUpdate": "CASCADE",
-                    "seqType": "Sequelize.INTEGER"
                 }
             },
             "indexes": []
@@ -168,5 +178,5 @@
             "indexes": []
         }
     },
-    "revision": 6
+    "revision": 14
 }

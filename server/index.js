@@ -26,7 +26,7 @@ const typeDefs = gql`
 
     type Pizza {
       id: ID!
-      tamanho: Tamanho
+      tamanho: Tamanho!
       sabor: Sabor!
       pextras: [Extra]
       valor: Int!
@@ -73,41 +73,20 @@ const resolvers = {
         tamanhoId: args.tamanhoId,
         saborId: args.saborId
       })
-      args.extraId.forEach((value, index) => {
-        db.PizzaExtras.create({
-          PizzaId: pizza.id,
-          ExtraId: value
-        })
-      })
+      pizza.setExtras(args.extraId)
       return pizza
     }
   },
   Pizza: {
     pextras: async (root) => {
-      // console.info(root)
-      let pe = await db.PizzaExtras.findAll({
-        attributes: ['ExtraId'],
-        where: {
-          PizzaId: root.id
-        }
-      })
-      let ex = await Array.from(pe, e => e.ExtraId)
-      let pextra = await db.Extra.findAll({        
-        where: {
-          PizzaId: {
-            [Op.in]: ex
-          }
-        }
-      })
-      return pextra
+      let ex = await root.getExtras()
+      return ex
     },
     tamanho: async (root) => {
-      // console.info(root)
       let t = await db.Tamanho.findById(root.tamanhoId)
       return t
     },
     sabor: async (root) => {
-      // console.info(root)
       let s = await db.Sabor.findById(root.saborId)
       return s
     }

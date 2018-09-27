@@ -5,10 +5,9 @@ module.exports = (sequelize, DataTypes) => {
     valor: DataTypes.INTEGER
   }, {})
   Pizza.associate = function (models) {
-    // Pizza.hasMany(models.Tamanho, { foreignKey: 'id' })
-    //Pizza.hasOne(models.Tamanho, {foreignKey: 'tamanho_id'})
-    //Pizza.hasOne(models.Sabor, {foreignKey: 'sabor_id'})
-    //Pizza.belongsToMany(models.Extra, {foreignKey: 'pizza_id'})
+    Pizza.belongsToMany(models.Extra, {through: 'PizzaExtras'})
+    Pizza.belongsTo(models.Tamanho, { foreignKey: 'tamanhoId' })
+    Pizza.belongsTo(models.Sabor, { foreignKey: 'saborId' })
   }
   return Pizza
 }

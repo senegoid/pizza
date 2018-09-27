@@ -52,20 +52,20 @@
                     "allowNull": false,
                     "seqType": "Sequelize.DATE"
                 },
-                "sabor_id": {
+                "tamanhoId": {
                     "allowNull": true,
                     "references": {
-                        "model": "Sabors",
+                        "model": "Tamanhos",
                         "key": "id"
                     },
                     "onDelete": "SET NULL",
                     "onUpdate": "CASCADE",
                     "seqType": "Sequelize.INTEGER"
                 },
-                "tamanho_id": {
+                "saborId": {
                     "allowNull": true,
                     "references": {
-                        "model": "Tamanhos",
+                        "model": "Sabors",
                         "key": "id"
                     },
                     "onDelete": "SET NULL",
@@ -168,5 +168,5 @@
             "indexes": []
         }
     },
-    "revision": 7
+    "revision": 15
 }
