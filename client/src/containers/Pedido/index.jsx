@@ -13,10 +13,16 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
+import FormGroup from '@material-ui/core/FormGroup';
+import Switch from '@material-ui/core/Switch';
+import Card from '@material-ui/core/Card';
+import CardActions from '@material-ui/core/CardActions';
+import CardContent from '@material-ui/core/CardContent';
 import { Query, Mutation } from 'react-apollo'
 
 import gql from 'graphql-tag'
 
+import styles from './styles'
 
 
 const QUERY_LISTS = gql`
@@ -24,6 +30,8 @@ query ListarUsuarios {
   tamanhos {
     id
     nome
+    valor
+    minutos
   }
   sabores {
     id
@@ -36,74 +44,78 @@ query ListarUsuarios {
 }
 `
 
-const MUTATION_PEDIDO = gql`
-mutation pedidoPizza(tamanho: Int, sabor: Int, extra: [Int], valor: Int, tempo: Int) {
-  pedidoPizza(tamanhoId: tamanho, saborId: sabor, extraId: extra, valor: valor, tempo: tempo){
-    id
-  }
-}
-`
-const styles = theme => ({
-  root: {
-    width: '90%',
-  },
-  button: {
-    marginTop: theme.spacing.unit,
-    marginRight: theme.spacing.unit,
-  },
-  actionsContainer: {
-    marginBottom: theme.spacing.unit * 2,
-  },
-  resetContainer: {
-    padding: theme.spacing.unit * 3,
-  },
-  formControl: {
-    margin: theme.spacing.unit * 3,
-  },
-  group: {
-    margin: `${theme.spacing.unit}px 0`,
-  }
-});
+Object.prototype.removeItem = function (key, value) {
+  if (value == undefined)
+      return;
 
+  for (var i in this) {
+      if (this[i][key] == value) {
+          this.splice(i, 1);
+      }
+  }
+};
 function getSteps() {
   return ['Escolha o tamanho', 'Escolha o sabor', 'Mais algum extra?'];
 }
-
-
-
 class Pedir extends React.Component {
-  
   state = {
     activeStep: 0,
-    tamanho: undefined,
-    sabor: undefined,
+    tamanho: {id: ''},
+    sabor: {id: ''},
     extra: [],
     valor: 0,
     tempo: 0
   };
-  
-  handleChange = event => {
-    this.setState({ [event.target.name]: event.target.value });
+
+  handleChange = (event, o) => {
+    this.setState({ [event.target.name]: o });
+  };
+  handleChangeCheck = (event, o) => {
+    let ex = this.state.extra
+    if(event.target.checked){
+      ex.push(o)
+    }
+    else{
+      ex.removeItem('id',o.id)
+    }
+    //ex[[event.target.name]] =  event.target.checked? o: null
+    this.setState({ extra: ex })
   };
 
   handleNext = () => {
     this.setState(state => ({
       activeStep: state.activeStep + 1,
-    }));
-  };
+    }))
+  }
 
   handleBack = () => {
     this.setState(state => ({
       activeStep: state.activeStep - 1,
-    }));
-  };
+    }))
+  }
 
   handleReset = () => {
     this.setState({
       activeStep: 0,
-    });
-  };
+      tamanho: {id: ''},
+      sabor: {id: ''},
+      extra: [],
+      valor: 0,
+      tempo: 0
+    })
+  }
 
+  getDisabled = (step) => {
+    switch (step) {
+      case 0:
+        return !this.state.tamanho.id > 0
+      case 1:
+        return !this.state.sabor.id > 0
+      default:
+        return false;
+
+  }
+}
   getStepContent = (step, dados) => {
     const { classes } = this.props;
     switch (step) {
@@ -115,13 +127,12 @@ class Pedir extends React.Component {
                 aria-label="Tamanho"
                 name="tamanho"
                 className={classes.group}
-                value={this.state.tamanho}
-                onChange={this.handleChange}
+                value={this.state.tamanho.id} 
               >
-               {dados.tamanhos.map((o, i) => ( <FormControlLabel value={o.id} control={<Radio />} label={o.nome} />)) }
+               {dados.tamanhos.map((o, i) => ( <FormControlLabel value={o.id} control={<Radio />} label={o.nome} onChange={(e) => this.handleChange(e, o)} />)) }
               </RadioGroup>
             </FormControl>
-            );
+            )
       case 1:
         return (
           <FormControl component="fieldset" className={classes.formControl}>
@@ -130,39 +141,46 @@ class Pedir extends React.Component {
               aria-label="Sabor"
               name="sabor"
               className={classes.group}
-              value={this.state.sabor}
-              onChange={this.handleChange}
+              value={this.state.sabor.id}
             >
-             {dados.sabores.map((o, i) => ( <FormControlLabel value={o.id} control={<Radio />} label={o.nome} />)) }
+             {dados.sabores.map((o, i) => ( <FormControlLabel value={o.id} control={<Radio />} label={o.nome} onChange={(e) => this.handleChange(e,o)} />)) }
             </RadioGroup>
           </FormControl>
-          );
+          )
       case 2:
         return (
-          <FormControl component="fieldset" className={classes.formControl}>
+          <FormControl component="fieldset">
             <FormLabel component="legend">Extras</FormLabel>
-            <RadioGroup
-              aria-label="Extra"
-              name="extra"
-              className={classes.group}
-              value={this.state.extra}
-              onChange={this.handleChange}
-            >
-             {dados.extras.map((o, i) => ( <FormControlLabel value={o.id} control={<Radio />} label={o.nome} />)) }
-            </RadioGroup>
-          </FormControl>
-          );
+            <FormGroup>
+            {dados.extras.map((o, i) => 
+              (
+              <FormControlLabel
+                control={
+                  <Switch
+                    name={'check'+ o.id}
+                    checked={this.state.extra && this.state.extra.find((i)=> {return i.id === o.id}) != undefined }
+                    //onChange={(e) => this.handleChange(o, e)}
+                    onChange={(e) => this.handleChangeCheck(e, o)}
+                    value={o.id}
+                  />
+                }
+                label={o.nome}
+              />
+            ))}
+           </FormGroup>
+        
+      </FormControl>
+      )
+
       default:
         return 'Unknown step';
     }
   }
 
   render() {
-    const {classes, error, loading, data} = this.props
+    const {classes} = this.props
     const steps = getSteps();
     const { activeStep } = this.state;
-
-    
   
     return (      
       <div className={classes.root}>
@@ -174,13 +192,19 @@ class Pedir extends React.Component {
                 <StepContent>
                 <Query query={QUERY_LISTS}>
                 {({ loading, error, data }) => {
-                  console.error(error)
-                  console.log(loading)
-                  console.log(data)
-                  return (
-                  !error && !loading && this.getStepContent(index, data)
-                  )}}
-                  </Query>
+                  //console.error(error)
+                  //console.log(loading)
+                  //console.log(data)
+                  if(!error && !loading ){
+                    this.dados =  data
+                    return (
+                      this.getStepContent(index, data)
+                    )
+                  }
+                  else
+                    return null
+                  }}
+                  </Query>                  
                   <div className={classes.actionsContainer}>
                     <div>
                       <Button
@@ -191,12 +215,13 @@ class Pedir extends React.Component {
                         Voltar
                       </Button>
                       <Button
+                        disabled={this.getDisabled(index)}
                         variant="contained"
                         color="primary"
                         onClick={this.handleNext}
                         className={classes.button}
                       >
-                        {activeStep === steps.length - 1 ? 'Acabei' : 'Pronto'}
+                        {activeStep === steps.length - 1 ? 'Acabei' : 'Ok'}
                       </Button>
                     </div>
                   </div>
@@ -207,7 +232,27 @@ class Pedir extends React.Component {
         </Stepper>
         {activeStep === steps.length && (
           <Paper square elevation={0} className={classes.resetContainer}>
-            <Typography>Pedido concluído</Typography>            
+            <Typography>Pedido concluído</Typography>  
+            <Card className={classes.card}>
+              <CardContent>
+                <Typography className={classes.title} color="textSecondary">
+                  Pedido
+                </Typography>
+                <Typography variant="headline" component="h2">
+                  Sabor
+                  {this.state.sabor.nome }                 
+                </Typography>
+                <Typography className={classes.pos} color="textSecondary">
+                  Tamanho 
+                  {this.state.tamanho.nome}
+                  Extra:
+                </Typography>
+                {this.state.extra.map((o, i) => (<Typography component="p"> {o.nome} </Typography> ))}
+              </CardContent>
+              <CardActions>
+                <Button size="small">Learn More</Button>
+              </CardActions>
+            </Card>
             <Button onClick={this.handleReset} className={classes.button}>
               Novo pedido
             </Button>

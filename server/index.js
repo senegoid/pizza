@@ -103,7 +103,7 @@ const server = new ApolloServer({
   }
 })
 
-db.sequelize.sync({ force: true }).then(() => {
+db.sequelize.sync({ force: false }).then(() => {
   server.listen().then(({ url, subscriptionsUrl }) => {
     console.log(`🚀  Server ready at ${url}`)
     console.log(`🚀  Subscriptions ready at ${subscriptionsUrl}`)
