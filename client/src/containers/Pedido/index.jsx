@@ -25,8 +25,8 @@ import gql from 'graphql-tag'
 import styles from './styles'
 
 
-const QUERY_LISTS = gql`
-query ListarUsuarios {
+export const QUERY_LISTS = gql`
+query GetConfigs {
   tamanhos {
     id
     nome
@@ -36,27 +36,28 @@ query ListarUsuarios {
   sabores {
     id
     nome
+    valor
+    minutos
   }
   extras {
     id
     nome 
+    valor
+    minutos
   }
 }
 `
 
-Object.prototype.removeItem = function (key, value) {
-  if (value == undefined)
-      return;
-
-  for (var i in this) {
-      if (this[i][key] == value) {
-          this.splice(i, 1);
-      }
+const ADD_PIZZA = gql`
+mutation AddPizza($tamanhoId: Int!, $saborId: Int!, $extraId: [Int], $valor: Int!, $tempo: Int!){
+    pedidoPizza(tamanhoId: $tamanhoId, saborId: $saborId, extraId: $extraId, valor: $valor, tempo: $tempo){
+     id       
+    }
   }
-};
-function getSteps() {
-  return ['Escolha o tamanho', 'Escolha o sabor', 'Mais algum extra?'];
-}
+`;
+
+
+
 class Pedir extends React.Component {
   state = {
     activeStep: 0,
@@ -65,32 +66,50 @@ class Pedir extends React.Component {
     extra: [],
     valor: 0,
     tempo: 0
-  };
+  }
+
+  getSteps = () => {
+    return ['Escolha o tamanho', 'Escolha o sabor', 'Mais algum extra?'];
+  }
+  removeitem = function (col, key, value) {
+    if (value === undefined)
+        return;
+  
+    for (var i in col) {
+        if (col[i][key] === value) {
+            col.splice(i, 1);
+        }
+    }
+  }
 
   handleChange = (event, o) => {
     this.setState({ [event.target.name]: o });
   };
+
   handleChangeCheck = (event, o) => {
     let ex = this.state.extra
     if(event.target.checked){
       ex.push(o)
     }
     else{
-      ex.removeItem('id',o.id)
+      this.removeitem(ex, 'id',o.id)
     }
-    //ex[[event.target.name]] =  event.target.checked? o: null
     this.setState({ extra: ex })
-  };
+  }
 
-  handleNext = () => {
+  handleNext = (e, active, len ) => {
     this.setState(state => ({
       activeStep: state.activeStep + 1,
     }))
+    if(active === len - 1){
+      this.getTotal()
+    }
   }
 
   handleBack = () => {
     this.setState(state => ({
       activeStep: state.activeStep - 1,
+      valor: 0
     }))
   }
 
@@ -114,8 +133,32 @@ class Pedir extends React.Component {
       default:
         return false;
 
+    }
   }
-}
+
+  getTotal = () => {
+    if (this.state.valor === 0){
+      let valor = 0
+      let tempo = 0
+
+      valor += this.state.tamanho.valor
+      tempo += this.state.tamanho.minutos
+
+      valor += this.state.sabor.valor
+      tempo += this.state.sabor.minutos
+
+      for (var i in this.state.extra) {
+        valor += this.state.extra[i].valor
+        tempo += this.state.extra[i].minutos
+      }
+      this.setState({ valor: valor })
+      this.setState({ tempo: tempo })
+    }
+    return true
+  }
+
+
+  
   getStepContent = (step, dados) => {
     const { classes } = this.props;
     switch (step) {
@@ -129,7 +172,7 @@ class Pedir extends React.Component {
                 className={classes.group}
                 value={this.state.tamanho.id} 
               >
-               {dados.tamanhos.map((o, i) => ( <FormControlLabel value={o.id} control={<Radio />} label={o.nome} onChange={(e) => this.handleChange(e, o)} />)) }
+               {dados.tamanhos.map((o, i) => ( <FormControlLabel key={i} value={o.id} control={<Radio />} label={o.nome} onChange={(e) => this.handleChange(e, o)} />)) }
               </RadioGroup>
             </FormControl>
             )
@@ -143,23 +186,23 @@ class Pedir extends React.Component {
               className={classes.group}
               value={this.state.sabor.id}
             >
-             {dados.sabores.map((o, i) => ( <FormControlLabel value={o.id} control={<Radio />} label={o.nome} onChange={(e) => this.handleChange(e,o)} />)) }
+             {dados.sabores.map((o, i) => ( <FormControlLabel key={i} value={o.id} control={<Radio />} label={o.nome} onChange={(e) => this.handleChange(e,o)} />)) }
             </RadioGroup>
           </FormControl>
           )
       case 2:
+        
         return (
           <FormControl component="fieldset">
             <FormLabel component="legend">Extras</FormLabel>
             <FormGroup>
             {dados.extras.map((o, i) => 
               (
-              <FormControlLabel
+              <FormControlLabel key={i}
                 control={
-                  <Switch
+                  <Switch key={i}
                     name={'check'+ o.id}
-                    checked={this.state.extra && this.state.extra.find((i)=> {return i.id === o.id}) != undefined }
-                    //onChange={(e) => this.handleChange(o, e)}
+                    checked={this.state.extra && this.state.extra.find((i)=> {return i.id === o.id}) !== undefined }
                     onChange={(e) => this.handleChangeCheck(e, o)}
                     value={o.id}
                   />
@@ -168,18 +211,18 @@ class Pedir extends React.Component {
               />
             ))}
            </FormGroup>
-        
-      </FormControl>
-      )
+          </FormControl>
+        )
 
       default:
         return 'Unknown step';
     }
   }
+  
 
   render() {
     const {classes} = this.props
-    const steps = getSteps();
+    const steps = this.getSteps();
     const { activeStep } = this.state;
   
     return (      
@@ -218,7 +261,7 @@ class Pedir extends React.Component {
                         disabled={this.getDisabled(index)}
                         variant="contained"
                         color="primary"
-                        onClick={this.handleNext}
+                        onClick={(e) => this.handleNext(e,activeStep, steps.length)}
                         className={classes.button}
                       >
                         {activeStep === steps.length - 1 ? 'Acabei' : 'Ok'}
@@ -235,31 +278,79 @@ class Pedir extends React.Component {
             <Typography>Pedido concluído</Typography>  
             <Card className={classes.card}>
               <CardContent>
-                <Typography className={classes.title} color="textSecondary">
+                <Typography className={classes.title} variant="display1" component="h1">
                   Pedido
                 </Typography>
-                <Typography variant="headline" component="h2">
+                <br />
+                <Typography variant="title" component="h2">
+                  Tamanho 
+                </Typography>
+                <Typography variant="subheading" align="right">
+                  {this.state.tamanho.nome} - {this.state.tamanho.valor} reais
+                </Typography>
+                <br />
+                <Typography variant="title" component="h2">
                   Sabor
+                </Typography>                
+                <Typography variant="subheading" align="right">
                   {this.state.sabor.nome }                 
                 </Typography>
-                <Typography className={classes.pos} color="textSecondary">
-                  Tamanho 
-                  {this.state.tamanho.nome}
+                <br />
+                <Typography variant="title" component="h2">
                   Extra:
                 </Typography>
-                {this.state.extra.map((o, i) => (<Typography component="p"> {o.nome} </Typography> ))}
+                <Typography variant="subheading" align="right">
+                  {this.state.extra.map((o, i) => (<Typography key={i} align="right" component="p"> {o.nome} - {o.valor} reais </Typography> ))}
+                </Typography>
+                <Typography variant="title" component="h2">
+                  Tempo:
+                </Typography>
+                <Typography variant="subheading" align="right">
+                  {this.state.tempo} minutos
+                </Typography>
+                <Typography variant="title" component="h2">
+                  Valor Total:
+                </Typography>
+                <Typography variant="subheading" align="right">
+                  {this.state.valor} reais
+                </Typography>
+                
               </CardContent>
               <CardActions>
-                <Button size="small">Learn More</Button>
+                <Mutation mutation={ADD_PIZZA}>
+                  {(pedidoPizza, { data }) => (
+                    <div>
+                      <form
+                        onSubmit={e => {
+                          e.preventDefault();
+                          pedidoPizza({ variables: { 
+                            tamanhoId: parseInt(this.state.tamanho.id, 10),
+                            saborId: parseInt(this.state.sabor.id, 10),
+                            extraId: this.state.extra.reduce((p,d)=>{
+                                p.push(parseInt(d.id, 10))
+                                return p
+                            },[]),
+                            tempo: parseInt(this.state.tempo, 10), 
+                            valor: parseInt(this.state.valor, 10) 
+                          }})      
+                          this.handleReset()
+                        }}
+                      >
+                        
+                        <Button type="submit" size="small">Confirmar Pedido</Button>
+                      </form>
+                    </div>
+                  )}
+                </Mutation>
               </CardActions>
             </Card>
             <Button onClick={this.handleReset} className={classes.button}>
-              Novo pedido
+              Refazer pedido
             </Button>
           </Paper>
         )}
       </div>
-    );
+    )
   }
 }
 
