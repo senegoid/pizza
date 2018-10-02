@@ -12,8 +12,6 @@
     "apollo-link-error": "^1.1.0",
     "apollo-link-http": "^1.5.4",
     "apollo-link-ws": "^1.0.8",
-    "enzyme": "^3.6.0",
-    "enzyme-adapter-react-16": "^1.5.0",
     "graphql": "^14.0.0",
     "history": "^4.7.2",
     "react": "^16.5.0",
@@ -23,7 +21,6 @@
     "react-scripts": "^1.1.5",
     "react-test-renderer": "^16.5.2",
     "subscriptions-transport-ws": "^0.9.14",
-    "test-utils": "^1.1.1"
   },
   "scripts": {
     "start": "react-scripts start",
